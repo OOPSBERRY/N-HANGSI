@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>N행시 대회</title>
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- ===================== 홈 화면 ===================== -->
+<section id="screen-home" class="screen active">
+  <div class="home-wrap">
+    <div class="title-logo-wrap">
+      <span class="impact-ring"></span>
+      <img src="title-logo.png" alt="N행시 대회" class="title-logo" />
+    </div>
+    <p class="subtitle">제시어로 짓는 나만의 N행시, 지금 시작해요!</p>
+    <div class="home-buttons">
+      <button class="btn btn-primary btn-xl" id="btn-go-teacher">
+        <span class="btn-emoji">🧑‍🏫</span>
+        <span>선생님 — 방 만들기</span>
+      </button>
+      <button class="btn btn-secondary btn-xl" id="btn-go-student">
+        <span class="btn-emoji">🙋</span>
+        <span>학생 — 참가하기</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 선생님: 방 설정 ===================== -->
+<section id="screen-teacher-setup" class="screen">
+  <div class="card wide">
+    <button class="btn-back" data-back="screen-home">← 처음으로</button>
+    <h2>방 만들기</h2>
+
+    <label class="field-label">제시어 목록</label>
+    <!-- STEP 1: 제시어 개수 설정 -->
+    <div id="setup-step-count">
+      <label class="field-label">제시어를 몇 개 낼까요?</label>
+      <p class="field-hint">제시어 개수 = 라운드 수예요. 학생들은 모든 제시어에 대해 순서대로 N행시를 짓게 돼요.</p>
+      <input id="input-word-count" type="number" class="input input-count" value="3" min="1" max="20" />
+      <button class="btn btn-primary btn-xl" id="btn-set-word-count">다음</button>
+    </div>
+
+    <!-- STEP 2: 제시어 입력 -->
+    <div id="setup-step-words" class="hidden">
+      <button class="btn-back" id="btn-back-to-count">← 개수 다시 설정</button>
+      <label class="field-label">제시어 입력</label>
+      <div id="word-inputs-wrap" class="word-inputs-wrap"></div>
+
+      <div class="field-row">
+        <div class="field-col">
+          <label class="field-label">작성 제한시간(초)</label>
+          <input id="input-write-seconds" type="number" class="input" value="90" min="10" max="600" />
+        </div>
+        <div class="field-col">
+          <label class="field-label">투표 제한시간(초)</label>
+          <input id="input-vote-seconds" type="number" class="input" value="45" min="10" max="600" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-xl" id="btn-create-room">방 만들기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 선생님: 방 관리 (모든 상태 공용) ===================== -->
+<section id="screen-teacher-room" class="screen">
+  <div class="teacher-layout">
+
+    <aside class="side-panel">
+      <div class="room-code-box">
+        <span class="room-code-label">방 코드</span>
+        <span class="room-code" id="teacher-room-code">------</span>
+      </div>
+      <div class="qr-box">
+        <img id="teacher-qr-img" class="qr-img" alt="입장 QR코드" />
+        <p class="qr-hint">QR코드를 스캔하면 자동으로 방 코드가 입력돼요</p>
+      </div>
+      <div class="participant-box">
+        <h3>참가자 <span id="teacher-participant-count">0</span>명</h3>
+        <ul id="teacher-participant-list" class="participant-list"></ul>
+      </div>
+      <button class="btn btn-ghost" id="btn-teacher-end-game">🛑 게임 종료</button>
+    </aside>
+
+    <main class="main-panel">
+
+      <!-- LOBBY -->
+      <div class="stage" id="stage-lobby">
+        <div class="stage-icon">🚪</div>
+        <h2>학생들이 입장하는 중이에요</h2>
+        <p class="stage-desc">모든 학생이 들어오면 라운드를 시작하세요.</p>
+        <button class="btn btn-primary btn-xl" id="btn-start-round">🎬 첫 라운드 시작</button>
+      </div>
+
+      <!-- WRITING -->
+      <div class="stage" id="stage-writing">
+        <div class="round-badge">ROUND <span id="teacher-round-num">1</span> / <span id="teacher-round-total">1</span></div>
+        <h2 class="prompt-word">제시어: <span id="teacher-current-word">-</span></h2>
+        <div class="timer-ring">
+          <span id="teacher-write-timer">--</span>
+        </div>
+        <p class="stage-desc"><span id="teacher-submit-count">0</span> / <span id="teacher-total-count">0</span>명 제출 완료</p>
+        <button class="btn btn-primary btn-xl" id="btn-end-writing">✋ 작성 마감하고 투표 시작</button>
+      </div>
+
+      <!-- VOTING -->
+      <div class="stage" id="stage-voting">
+        <div class="round-badge">ROUND <span id="teacher-round-num-2">1</span> / <span id="teacher-round-total-2">1</span></div>
+        <h2>🗳️ 투표가 진행 중이에요</h2>
+        <div class="timer-ring">
+          <span id="teacher-vote-timer">--</span>
+        </div>
+        <p class="stage-desc"><span id="teacher-vote-count">0</span> / <span id="teacher-vote-total">0</span>명 투표 완료</p>
+        <button class="btn btn-primary btn-xl" id="btn-end-voting">📣 투표 마감하고 결과 보기</button>
+      </div>
+
+      <!-- ROUND RESULT -->
+      <div class="stage" id="stage-round-result">
+        <h2>🏅 이번 라운드 결과</h2>
+        <div id="round-result-list" class="result-list"></div>
+        <button class="btn btn-primary btn-xl" id="btn-next-round">다음 라운드 ▶</button>
+        <button class="btn btn-secondary btn-xl hidden" id="btn-show-final">🏆 최종 시상식 보기</button>
+      </div>
+
+      <!-- FINAL -->
+      <div class="stage" id="stage-final">
+        <div class="confetti" id="confetti-wrap"></div>
+        <h2 class="ceremony-title">🎉 시상식 🎉</h2>
+        <div id="podium" class="podium"></div>
+        <button class="btn btn-secondary btn-xl" id="btn-teacher-restart">🔄 새 게임 만들기</button>
+      </div>
+
+    </main>
+  </div>
+</section>
+
+<!-- ===================== 학생: 입장 ===================== -->
+<section id="screen-student-join" class="screen">
+  <div class="card">
+    <button class="btn-back" data-back="screen-home">← 처음으로</button>
+    <h2>학생 입장</h2>
+    <label class="field-label">방 코드</label>
+    <input id="input-room-code" class="input input-code" maxlength="6" placeholder="000000" inputmode="numeric" />
+    <label class="field-label">이름</label>
+    <input id="input-student-name" class="input" maxlength="10" placeholder="이름을 입력하세요" />
+    <button class="btn btn-primary btn-xl" id="btn-join-room">입장하기</button>
+  </div>
+</section>
+
+<!-- ===================== 학생: 대기 / 작성 / 투표 / 결과 (공용 스테이지) ===================== -->
+<section id="screen-student-room" class="screen">
+  <div class="student-layout">
+    <header class="student-header">
+      <span class="chip" id="student-name-chip">이름</span>
+      <span class="chip chip-muted">방 <span id="student-room-code-chip">------</span></span>
+    </header>
+
+    <!-- WAIT -->
+    <div class="stage" id="s-stage-wait">
+      <div class="stage-icon">⏳</div>
+      <h2 id="s-wait-title">선생님이 라운드를 시작할 때까지 기다려주세요</h2>
+      <p class="stage-desc">현재 <span id="s-wait-participant-count">0</span>명이 함께하고 있어요</p>
+
+      <div class="fun-examples" id="s-wait-examples"></div>
+    </div>
+
+    <!-- WRITING -->
+    <div class="stage" id="s-stage-writing">
+      <div class="round-badge">ROUND <span id="s-round-num">1</span></div>
+      <h2 class="prompt-word">제시어: <span id="s-current-word">-</span></h2>
+      <div class="timer-ring small"><span id="s-write-timer">--</span></div>
+      <div id="s-write-lines" class="write-lines"></div>
+      <button class="btn btn-primary btn-xl" id="btn-submit-nhangsi">제출하기</button>
+    </div>
+
+    <!-- WAIT AFTER SUBMIT -->
+    <div class="stage" id="s-stage-submitted">
+      <div class="stage-icon">✅</div>
+      <h2>제출 완료!</h2>
+      <p class="stage-desc">다른 친구들을 기다리고 있어요</p>
+      <div class="my-submission" id="s-my-submission"></div>
+    </div>
+
+    <!-- VOTING -->
+    <div class="stage" id="s-stage-voting">
+      <h2>🗳️ 가장 마음에 드는 작품에 투표하세요</h2>
+      <div class="timer-ring small"><span id="s-vote-timer">--</span></div>
+      <div id="s-vote-list" class="vote-list"></div>
+    </div>
+
+    <!-- WAIT AFTER VOTE -->
+    <div class="stage" id="s-stage-voted">
+      <div class="stage-icon">🙌</div>
+      <h2>투표 완료!</h2>
+      <p class="stage-desc">결과 발표를 기다려주세요</p>
+    </div>
+
+    <!-- ROUND RESULT -->
+    <div class="stage" id="s-stage-round-result">
+      <h2>🏅 이번 라운드 결과</h2>
+      <div id="s-round-result-list" class="result-list"></div>
+      <p class="stage-desc">다음 라운드를 기다려주세요</p>
+    </div>
+
+    <!-- FINAL -->
+    <div class="stage" id="s-stage-final">
+      <div class="confetti" id="s-confetti-wrap"></div>
+      <h2 class="ceremony-title">🎉 시상식 🎉</h2>
+      <div id="s-podium" class="podium"></div>
+    </div>
+
+  </div>
+</section>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
