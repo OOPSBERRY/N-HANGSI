@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>N행시 대회</title>
 <link rel="icon" type="image/png" href="favicon.png" />
-<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
 
 <div id="toast" class="toast hidden"></div>
+<div class="made-by-footer">Made by 민프피</div>
 
 <!-- ===================== 홈 화면 ===================== -->
 <section id="screen-home" class="screen active">
@@ -29,7 +30,6 @@
         <span>학생 — 참가하기</span>
       </button>
     </div>
-    <p class="made-by">Made by 민프피</p>
   </div>
 </section>
 
@@ -107,6 +107,7 @@
         <div class="timer-ring">
           <span id="teacher-write-timer">--</span>
         </div>
+        <button type="button" class="timer-add-btn" id="btn-add-write-time">⏱️ 30초 추가</button>
         <p class="stage-desc"><span id="teacher-submit-count">0</span> / <span id="teacher-total-count">0</span>명 제출 완료</p>
         <button class="btn btn-primary btn-xl" id="btn-end-writing">✋ 작성 마감하고 투표 시작</button>
       </div>
@@ -118,6 +119,7 @@
         <div class="timer-ring">
           <span id="teacher-vote-timer">--</span>
         </div>
+        <button type="button" class="timer-add-btn" id="btn-add-vote-time">⏱️ 30초 추가</button>
         <p class="stage-desc"><span id="teacher-vote-count">0</span> / <span id="teacher-vote-total">0</span>명 전체 투표 완료</p>
         <button class="btn btn-primary btn-xl" id="btn-show-final">🏆 시상식 시작</button>
       </div>
@@ -231,6 +233,6 @@
   </div>
 </section>
 
-<script type="module" src="app.js"></script>
+<script type="module" src="app.js?v=5"></script>
 </body>
 </html>

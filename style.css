@@ -166,12 +166,16 @@ button, input, textarea {
   box-shadow: 0 10px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(255, 255, 255, .06);
 }
 
-.made-by {
-  margin-top: 2rem;
-  font-size: .78rem;
-  color: #a9a6b0;
-  opacity: 0;
-  animation: fadeUp .6s ease 1.4s forwards;
+.made-by-footer {
+  position: fixed;
+  left: 50%;
+  bottom: .5rem;
+  transform: translateX(-50%);
+  font-size: .72rem;
+  color: rgba(255, 255, 255, .35);
+  z-index: 40;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 @keyframes logoSlam {
@@ -418,10 +422,35 @@ button, input, textarea {
   flex-direction: column;
   gap: .1rem;
 }
+.participant-list li .p-row { display: flex; align-items: center; justify-content: space-between; gap: .4rem; }
 .participant-list li .p-name { font-weight: 700; }
 .participant-list li .p-status { font-size: .78rem; color: var(--ink-soft); }
 .participant-list li.done { background: #e8f6ec; }
 .participant-list li.done .p-status { color: #2f8f4f; font-weight: 700; }
+.p-kick {
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-size: .8rem;
+  cursor: pointer;
+  padding: .1rem .35rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.p-kick:active { background: #ffe3e3; color: var(--primary-dark); }
+
+.timer-add-btn {
+  margin-top: .6rem;
+  background: none;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: .5rem 1.1rem;
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.timer-add-btn:active { transform: scale(.96); }
 
 .main-panel {
   flex: 1;

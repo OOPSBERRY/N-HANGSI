@@ -161,6 +161,7 @@ const state = {
   selectedVoteTab: 0,
   myVotedRounds: new Set(),
   unsubMyVotes: null,
+  unsubMyParticipant: null,
 };
 
 function resetToHome() {
@@ -358,9 +359,37 @@ function renderParticipantList() {
     if (status === "writing") { done = state.submittedSet.has(p.id); label = done ? "제출 완료" : "작성 중"; }
     else if (status === "voting") { done = state.votedSet.has(p.id); label = done ? "투표 완료" : "투표 중"; }
     li.className = done ? "done" : "";
-    li.innerHTML = `<span class="p-name">${escapeHtml(p.name)}</span>` + (label ? `<span class="p-status">${escapeHtml(label)}</span>` : "");
+    li.innerHTML = `
+      <div class="p-row">
+        <span class="p-name">${escapeHtml(p.name)}</span>
+        <button type="button" class="p-kick" data-pid="${p.id}" title="내보내기">✕ 내보내기</button>
+      </div>
+      ${label ? `<span class="p-status">${escapeHtml(label)}</span>` : ""}`;
     ul.appendChild(li);
   });
+  ul.querySelectorAll(".p-kick").forEach((btn) => {
+    btn.addEventListener("click", () => kickParticipant(btn.dataset.pid));
+  });
+}
+
+async function kickParticipant(participantId) {
+  const p = state.participants.find((x) => x.id === participantId);
+  if (!confirm(`${p ? p.name : "이 학생"}을(를) 내보낼까요?`)) return;
+  try {
+    await deleteDoc(doc(db, "rooms", state.roomCode, "participants", participantId));
+    await updateDoc(doc(db, "rooms", state.roomCode), { participantCount: increment(-1) });
+  } catch (e) {
+    console.error(e);
+    toast("내보내기에 실패했어요");
+  }
+}
+
+async function addWriteTime() {
+  await updateDoc(doc(db, "rooms", state.roomCode), { writeSeconds: increment(30) });
+}
+
+async function addVoteTime() {
+  await updateDoc(doc(db, "rooms", state.roomCode), { voteSeconds: increment(30) });
 }
 
 function startWriteTimer(room) {
@@ -596,6 +625,14 @@ function enterStudentRoom(session) {
     state.roomData = { id: snap.id, ...snap.data() };
     renderStudentStage();
   });
+
+  const myPartRef = doc(db, "rooms", session.roomCode, "participants", session.participantId);
+  state.unsubMyParticipant = onSnapshot(myPartRef, (snap) => {
+    if (!snap.exists() && state.role === "student") {
+      toast("선생님이 내보냈어요");
+      resetToHome();
+    }
+  });
 }
 
 async function renderStudentStage() {
@@ -824,10 +861,11 @@ function stopStudentExtraTimer() {
 }
 
 function stopStudentListeners() {
-  [state.unsubRoom, state.unsubVoteList, state.unsubMyVotes].forEach((fn) => fn && fn());
+  [state.unsubRoom, state.unsubVoteList, state.unsubMyVotes, state.unsubMyParticipant].forEach((fn) => fn && fn());
   state.unsubRoom = null;
   state.unsubVoteList = null;
   state.unsubMyVotes = null;
+  state.unsubMyParticipant = null;
   state.myVotedRounds = new Set();
   stopStudentExtraTimer();
   stopFunExamples();
@@ -858,6 +896,8 @@ $("btn-back-to-count").addEventListener("click", () => {
 $("btn-create-room").addEventListener("click", createRoom);
 $("btn-start-round").addEventListener("click", startRound);
 $("btn-end-writing").addEventListener("click", endWriting);
+$("btn-add-write-time").addEventListener("click", addWriteTime);
+$("btn-add-vote-time").addEventListener("click", addVoteTime);
 $("btn-show-final").addEventListener("click", showFinalStage);
 $("btn-open-exhibition").addEventListener("click", openExhibition);
 $("btn-teacher-end-game").addEventListener("click", endGame);
