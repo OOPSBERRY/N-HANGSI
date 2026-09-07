@@ -304,7 +304,13 @@ function renderTeacherStage() {
     clearInterval(state.writeTimerInterval);
     clearInterval(state.voteTimerInterval);
     showStage(scope, "stage-final");
+    renderWordAwards($("word-awards"), room);
     renderFinal($("podium"), $("confetti-wrap"), $("winner-works"));
+  } else if (room.status === "exhibition") {
+    clearInterval(state.writeTimerInterval);
+    clearInterval(state.voteTimerInterval);
+    showStage(scope, "stage-exhibition");
+    renderExhibition($("exhibition-gallery"), room);
   }
 }
 
@@ -455,6 +461,62 @@ async function renderFinal(podiumEl, confettiEl, worksEl) {
   }
 }
 
+async function renderWordAwards(container, room) {
+  if (!container) return;
+  try {
+    container.innerHTML = "";
+    for (let i = 0; i < room.words.length; i++) {
+      const subsRef = collection(db, "rooms", state.roomCode, "submissions");
+      const q = query(subsRef, where("roundIndex", "==", i), orderBy("voteCount", "desc"), limit(1));
+      const snap = await getDocs(q);
+      const div = document.createElement("div");
+      div.className = "word-award-card";
+      if (snap.empty) {
+        div.innerHTML = `<div class="word-award-title">🏆 "${escapeHtml(room.words[i])}" 대상</div><div class="stage-desc">제출된 작품이 없어요</div>`;
+      } else {
+        const data = snap.docs[0].data();
+        div.innerHTML = `
+          <div class="word-award-title">🏆 "${escapeHtml(room.words[i])}" 대상<span class="word-award-votes">${data.voteCount || 0}표</span></div>
+          <div class="word-award-name">${escapeHtml(data.name)}</div>
+          <div class="word-award-text">${escapeHtml(data.text)}</div>`;
+      }
+      container.appendChild(div);
+    }
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = '<p class="stage-desc">제시어별 대상을 불러오지 못했어요</p>';
+  }
+}
+
+async function renderExhibition(container, room) {
+  if (!container) return;
+  try {
+    container.innerHTML = "";
+    for (let i = 0; i < room.words.length; i++) {
+      const subsRef = collection(db, "rooms", state.roomCode, "submissions");
+      const q = query(subsRef, where("roundIndex", "==", i), orderBy("voteCount", "desc"));
+      const snap = await getDocs(q);
+      const section = document.createElement("div");
+      section.className = "exhibition-section";
+      const itemsHtml = snap.docs
+        .map((d) => {
+          const data = d.data();
+          return `<div class="exhibition-item"><span class="exhibition-name">${escapeHtml(data.name)}</span><span class="exhibition-votes">${data.voteCount || 0}표</span><div class="exhibition-text">${escapeHtml(data.text)}</div></div>`;
+        })
+        .join("");
+      section.innerHTML = `<h3 class="exhibition-word">${escapeHtml(room.words[i])}</h3><div class="exhibition-items">${itemsHtml || '<p class="stage-desc">제출된 작품이 없어요</p>'}</div>`;
+      container.appendChild(section);
+    }
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = '<p class="stage-desc">전시회를 불러오지 못했어요</p>';
+  }
+}
+
+async function openExhibition() {
+  await updateDoc(doc(db, "rooms", state.roomCode), { status: "exhibition" });
+}
+
 async function endGame() {
   if (!confirm("게임을 종료할까요? 학생들의 화면도 함께 종료됩니다.")) return;
   await deleteDoc(doc(db, "rooms", state.roomCode));
@@ -589,7 +651,16 @@ async function renderStudentStage() {
     if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
     if (state.unsubMyVotes) { state.unsubMyVotes(); state.unsubMyVotes = null; }
     showStage(scope, "s-stage-final");
+    await renderWordAwards($("s-word-awards"), room);
     await renderFinal($("s-podium"), $("s-confetti-wrap"), $("s-winner-works"));
+    state.lastStudentKey = key;
+    return;
+  }
+
+  if (room.status === "exhibition") {
+    stopStudentExtraTimer();
+    showStage(scope, "s-stage-exhibition");
+    await renderExhibition($("s-exhibition-gallery"), room);
     state.lastStudentKey = key;
     return;
   }
@@ -788,6 +859,7 @@ $("btn-create-room").addEventListener("click", createRoom);
 $("btn-start-round").addEventListener("click", startRound);
 $("btn-end-writing").addEventListener("click", endWriting);
 $("btn-show-final").addEventListener("click", showFinalStage);
+$("btn-open-exhibition").addEventListener("click", openExhibition);
 $("btn-teacher-end-game").addEventListener("click", endGame);
 $("btn-teacher-restart").addEventListener("click", teacherRestart);
 $("btn-show-qr-modal").addEventListener("click", () => $("qr-modal").classList.remove("hidden"));
@@ -827,7 +899,9 @@ $("input-room-code").addEventListener("input", (e) => {
       const session = JSON.parse(savedSessionRaw);
       const roomSnap = await getDoc(doc(db, "rooms", session.roomCode));
       const partSnap = await getDoc(doc(db, "rooms", session.roomCode, "participants", session.participantId));
-      const roomIsActive = roomSnap.exists() && roomSnap.data().status !== "finalResult";
+      const roomIsActive = roomSnap.exists()
+        && roomSnap.data().status !== "finalResult"
+        && roomSnap.data().status !== "exhibition";
       if (roomIsActive && partSnap.exists()) { enterStudentRoom(session); return; }
     } catch (e) { console.error(e); }
     localStorage.removeItem("nhangsi_session");
