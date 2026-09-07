@@ -335,6 +335,69 @@ button, input, textarea {
 }
 .qr-hint { font-size: .78rem; color: var(--ink-soft); margin-top: .4rem; }
 
+.qr-fab {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  z-index: 500;
+  border: none;
+  border-radius: 999px;
+  padding: .9rem 1.3rem;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+  box-shadow: 0 10px 24px rgba(47, 120, 224, .4);
+  cursor: pointer;
+}
+.qr-fab:active { transform: scale(.96); }
+
+.qr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qr-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 18, 24, .6);
+}
+.qr-modal-card {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem 1.8rem;
+  text-align: center;
+  max-width: 320px;
+  width: 88vw;
+  animation: floatIn .25s ease;
+}
+.qr-modal-card .room-code-box,
+.qr-modal-card .room-code-label { display: block; }
+.qr-modal-card .room-code {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: .3rem;
+  margin: .3rem 0 1rem;
+}
+.qr-modal-card .room-code-label { color: var(--ink-soft); font-size: .85rem; }
+.qr-modal-close {
+  position: absolute;
+  top: .8rem;
+  right: .9rem;
+  border: none;
+  background: none;
+  font-size: 1.2rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
 .participant-box h3 { margin: .2rem 0 .6rem; font-size: 1rem; }
 .participant-list { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; }
 .participant-list li {
@@ -463,7 +526,8 @@ button, input, textarea {
 .student-header {
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: .6rem;
   margin-bottom: 1.4rem;
 }
 .chip {
@@ -473,8 +537,14 @@ button, input, textarea {
   font-weight: 700;
   box-shadow: var(--shadow);
   font-size: .9rem;
+  border: none;
 }
 .chip-muted { color: var(--ink-soft); }
+.chip-leave {
+  margin-left: auto;
+  color: var(--primary-dark);
+  cursor: pointer;
+}
 
 #screen-student-room .stage {
   background: var(--card-bg);

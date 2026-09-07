@@ -131,6 +131,18 @@
 
     </main>
   </div>
+
+  <button class="qr-fab" id="btn-show-qr-modal">📱 QR코드 보기</button>
+  <div class="qr-modal hidden" id="qr-modal">
+    <div class="qr-modal-backdrop" id="qr-modal-backdrop"></div>
+    <div class="qr-modal-card">
+      <button class="qr-modal-close" id="btn-close-qr-modal">✕</button>
+      <span class="room-code-label">방 코드</span>
+      <span class="room-code" id="qr-modal-room-code">------</span>
+      <img id="qr-modal-img" class="qr-img" alt="입장 QR코드" />
+      <p class="qr-hint">QR코드를 스캔하면 자동으로 방 코드가 입력돼요</p>
+    </div>
+  </div>
 </section>
 
 <!-- ===================== 학생: 입장 ===================== -->
@@ -152,6 +164,7 @@
     <header class="student-header">
       <span class="chip" id="student-name-chip">이름</span>
       <span class="chip chip-muted">방 <span id="student-room-code-chip">------</span></span>
+      <button class="chip chip-leave" id="btn-leave-room">나가기</button>
     </header>
 
     <!-- WAIT -->

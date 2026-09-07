@@ -277,6 +277,8 @@ function enterTeacherRoom(code) {
   showScreen("screen-teacher-room");
   $("teacher-room-code").textContent = code;
   $("teacher-qr-img").src = qrUrl(joinUrl(code));
+  $("qr-modal-room-code").textContent = code;
+  $("qr-modal-img").src = qrUrl(joinUrl(code));
 
   stopTeacherListeners();
 
@@ -467,10 +469,14 @@ async function endGame() {
   resetToHome();
 }
 
-function teacherRestart() {
+async function teacherRestart() {
+  const oldRoomCode = state.roomCode;
   resetToHome();
   resetTeacherSetupForm();
   showScreen("screen-teacher-setup");
+  if (oldRoomCode) {
+    try { await deleteDoc(doc(db, "rooms", oldRoomCode)); } catch (e) { console.error(e); }
+  }
 }
 
 function stopTeacherListeners() {
@@ -792,7 +798,15 @@ $("btn-end-writing").addEventListener("click", endWriting);
 $("btn-show-final").addEventListener("click", showFinalStage);
 $("btn-teacher-end-game").addEventListener("click", endGame);
 $("btn-teacher-restart").addEventListener("click", teacherRestart);
+$("btn-show-qr-modal").addEventListener("click", () => $("qr-modal").classList.remove("hidden"));
+$("btn-close-qr-modal").addEventListener("click", () => $("qr-modal").classList.add("hidden"));
+$("qr-modal-backdrop").addEventListener("click", () => $("qr-modal").classList.add("hidden"));
+
 $("btn-join-room").addEventListener("click", joinRoom);
+$("btn-leave-room").addEventListener("click", () => {
+  if (!confirm("방에서 나갈까요?")) return;
+  resetToHome();
+});
 $("btn-submit-nhangsi").addEventListener("click", submitNhangsi);
 
 $("input-room-code").addEventListener("input", (e) => {
@@ -819,8 +833,10 @@ $("input-room-code").addEventListener("input", (e) => {
   if (savedSessionRaw) {
     try {
       const session = JSON.parse(savedSessionRaw);
-      const snap = await getDoc(doc(db, "rooms", session.roomCode, "participants", session.participantId));
-      if (snap.exists()) { enterStudentRoom(session); return; }
+      const roomSnap = await getDoc(doc(db, "rooms", session.roomCode));
+      const partSnap = await getDoc(doc(db, "rooms", session.roomCode, "participants", session.participantId));
+      const roomIsActive = roomSnap.exists() && roomSnap.data().status !== "finalResult";
+      if (roomIsActive && partSnap.exists()) { enterStudentRoom(session); return; }
     } catch (e) { console.error(e); }
     localStorage.removeItem("nhangsi_session");
   }
