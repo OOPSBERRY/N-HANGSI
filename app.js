@@ -104,44 +104,19 @@ function spawnConfetti(container) {
 }
 
 // ------------------------------------------------------------------------
-// 학생 대기 화면에 보여줄 "기발한 학생 N행시" 예시
-// (사진 속 손글씨를 옮긴 것이라 실제 문구와 다를 수 있어요. 필요하면 아래
-//  배열 내용을 자유롭게 수정하세요.)
+// 학생 대기 화면에 보여줄 "기발한 학생 N행시" 예시 사진
+// (example-1.png, example-2.png ... 순서로 프로젝트 폴더에 저장하면 됩니다)
 // ------------------------------------------------------------------------
-const FUN_EXAMPLES = [
-  {
-    title: "소나기 (3행시)",
-    lines: [
-      ["소", "소방차가 불난 집 불을 끈다"],
-      ["나", "나는 신나게 구경을 했다"],
-      ["기", "기절했다. 우리 집이었다"],
-    ],
-  },
-  {
-    title: "장애인의 날 (5행시)",
-    lines: [
-      ["장", "애벌레가 나비가 됨"],
-      ["애", "벌레도"],
-      ["인", "간들이 무관심한 사이에도"],
-      ["의", "지를 가지고"],
-      ["날", "아가는 꿈을 꾼다"],
-    ],
-  },
-];
+const FUN_EXAMPLE_IMAGES = ["example1.png", "example2.png"];
 
 function renderFunExample(index) {
   const box = $("s-wait-examples");
   if (!box) return;
-  const i = index % FUN_EXAMPLES.length;
-  const ex = FUN_EXAMPLES[i];
-  const linesHtml = ex.lines
-    .map(([ch, text]) => `<div class="fun-example-line"><div class="fx-char">${escapeHtml(ch)}</div><div>${escapeHtml(text)}</div></div>`)
-    .join("");
-  const dotsHtml = FUN_EXAMPLES.map((_, di) => `<span class="${di === i ? "active" : ""}"></span>`).join("");
+  const i = index % FUN_EXAMPLE_IMAGES.length;
+  const dotsHtml = FUN_EXAMPLE_IMAGES.map((_, di) => `<span class="${di === i ? "active" : ""}"></span>`).join("");
   box.innerHTML = `
     <div class="fun-examples-label">✨ 기발한 학생 N행시 모음</div>
-    <div class="fun-example-title">${escapeHtml(ex.title)}</div>
-    ${linesHtml}
+    <img src="${FUN_EXAMPLE_IMAGES[i]}" alt="학생 N행시 예시" class="fun-example-img" />
     <div class="fun-example-dots">${dotsHtml}</div>`;
 }
 
@@ -329,7 +304,7 @@ function renderTeacherStage() {
     clearInterval(state.writeTimerInterval);
     clearInterval(state.voteTimerInterval);
     showStage(scope, "stage-final");
-    renderFinal($("podium"), $("confetti-wrap"));
+    renderFinal($("podium"), $("confetti-wrap"), $("winner-works"));
   }
 }
 
@@ -443,7 +418,7 @@ async function showFinalStage() {
   await updateDoc(doc(db, "rooms", state.roomCode), { status: "finalResult" });
 }
 
-async function renderFinal(podiumEl, confettiEl) {
+async function renderFinal(podiumEl, confettiEl, worksEl) {
   try {
     const partRef = collection(db, "rooms", state.roomCode, "participants");
     const q = query(partRef, orderBy("totalScore", "desc"), limit(3));
@@ -458,6 +433,23 @@ async function renderFinal(podiumEl, confettiEl) {
       podiumEl.appendChild(div);
     });
     spawnConfetti(confettiEl);
+
+    if (worksEl) {
+      worksEl.innerHTML = "";
+      for (let i = 0; i < top.length; i++) {
+        const p = top[i];
+        const subsRef = collection(db, "rooms", state.roomCode, "submissions");
+        const subsSnap = await getDocs(query(subsRef, where("participantId", "==", p.id)));
+        const works = subsSnap.docs.map((d) => d.data()).sort((a, b) => a.roundIndex - b.roundIndex);
+        const card = document.createElement("div");
+        card.className = "winner-work-card";
+        const lines = works
+          .map((w) => `<div class="winner-work-line"><span class="winner-work-word">${escapeHtml(w.word)}</span><span class="winner-work-text">${escapeHtml(w.text)}</span></div>`)
+          .join("");
+        card.innerHTML = `<div class="winner-work-name">${medals[i]} ${escapeHtml(p.name)}</div>${lines}`;
+        worksEl.appendChild(card);
+      }
+    }
   } catch (e) {
     console.error(e);
   }
@@ -597,7 +589,7 @@ async function renderStudentStage() {
     if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
     if (state.unsubMyVotes) { state.unsubMyVotes(); state.unsubMyVotes = null; }
     showStage(scope, "s-stage-final");
-    await renderFinal($("s-podium"), $("s-confetti-wrap"));
+    await renderFinal($("s-podium"), $("s-confetti-wrap"), $("s-winner-works"));
     state.lastStudentKey = key;
     return;
   }

@@ -499,6 +499,27 @@ button, input, textarea {
 .podium-2 { background: linear-gradient(135deg, #c9c9d6, #9c9cae); height: 170px; order: 1; width: 30%; }
 .podium-3 { background: linear-gradient(135deg, #e0a675, #c07f4c); height: 140px; order: 3; width: 30%; }
 
+.winner-works {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  margin: 1.6rem 0 .4rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.winner-work-card {
+  background: #faf6f2;
+  border-radius: 14px;
+  padding: .9rem 1.1rem;
+  text-align: left;
+}
+.winner-work-name { font-weight: 800; margin-bottom: .4rem; }
+.winner-work-line { display: flex; gap: .5rem; font-size: .9rem; margin-bottom: .25rem; }
+.winner-work-word { font-weight: 700; color: var(--primary-dark); flex-shrink: 0; }
+.winner-work-text { color: var(--ink-soft); white-space: pre-line; }
+
 .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .confetti-piece {
   position: absolute;
@@ -599,31 +620,11 @@ button, input, textarea {
   align-items: center;
   gap: .4rem;
 }
-.fun-example-title {
-  font-weight: 800;
-  font-size: 1.05rem;
-  margin-bottom: .7rem;
-}
-.fun-example-line {
-  display: flex;
-  align-items: flex-start;
-  gap: .55rem;
-  margin-bottom: .45rem;
-  font-size: .92rem;
-  line-height: 1.35;
-}
-.fun-example-line .fx-char {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--primary);
-  color: #fff;
-  font-weight: 800;
-  font-size: .85rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.fun-example-img {
+  width: 100%;
+  border-radius: 12px;
+  display: block;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .15);
 }
 .fun-example-dots {
   display: flex;
