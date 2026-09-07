@@ -183,6 +183,9 @@ const state = {
   autoEndFired: false,
   funExampleInterval: null,
   funExampleIndex: 0,
+  selectedVoteTab: 0,
+  myVotedRounds: new Set(),
+  unsubMyVotes: null,
 };
 
 function resetToHome() {
@@ -298,6 +301,12 @@ function renderTeacherStage() {
   const total = room.words.length;
   const key = room.status + ":" + room.currentRoundIndex;
 
+  if (key !== state.lastTeacherKey) {
+    state.lastTeacherKey = key;
+    state.autoEndFired = false;
+    attachRoundCountListener(room);
+  }
+
   if (room.status === "lobby") {
     showStage(scope, "stage-lobby");
   } else if (room.status === "writing") {
@@ -306,32 +315,19 @@ function renderTeacherStage() {
     $("teacher-round-total").textContent = total;
     $("teacher-current-word").textContent = room.words[room.currentRoundIndex];
     $("teacher-total-count").textContent = state.participants.length;
+    const isLast = room.currentRoundIndex >= total - 1;
+    $("btn-end-writing").textContent = isLast ? "✋ 작성 마감하고 투표 시작" : "▶ 다음 제시어로 이동";
     startWriteTimer(room);
   } else if (room.status === "voting") {
     showStage(scope, "stage-voting");
-    $("teacher-round-num-2").textContent = room.currentRoundIndex + 1;
-    $("teacher-round-total-2").textContent = total;
+    $("teacher-vote-word-total").textContent = total;
     $("teacher-vote-total").textContent = state.participants.length;
     startVoteTimer(room);
-  } else if (room.status === "roundResult") {
-    clearInterval(state.writeTimerInterval);
-    clearInterval(state.voteTimerInterval);
-    showStage(scope, "stage-round-result");
-    renderTeacherRoundResult(room);
-    const isLast = room.currentRoundIndex >= total - 1;
-    $("btn-next-round").classList.toggle("hidden", isLast);
-    $("btn-show-final").classList.toggle("hidden", !isLast);
   } else if (room.status === "finalResult") {
     clearInterval(state.writeTimerInterval);
     clearInterval(state.voteTimerInterval);
     showStage(scope, "stage-final");
     renderFinal($("podium"), $("confetti-wrap"));
-  }
-
-  if (key !== state.lastTeacherKey) {
-    state.lastTeacherKey = key;
-    state.autoEndFired = false;
-    attachRoundCountListener(room);
   }
 }
 
@@ -350,10 +346,16 @@ function attachRoundCountListener(room) {
     });
   } else if (room.status === "voting") {
     const votesRef = collection(db, "rooms", state.roomCode, "votes");
-    const q = query(votesRef, where("roundIndex", "==", room.currentRoundIndex));
-    state.unsubRoundExtra = onSnapshot(q, (snap) => {
-      state.votedSet = new Set(snap.docs.map((d) => d.data().voterId));
-      $("teacher-vote-count").textContent = snap.size;
+    state.unsubRoundExtra = onSnapshot(votesRef, (snap) => {
+      const perVoter = {};
+      snap.docs.forEach((d) => {
+        const v = d.data();
+        if (!perVoter[v.voterId]) perVoter[v.voterId] = new Set();
+        perVoter[v.voterId].add(v.roundIndex);
+      });
+      const total = room.words.length;
+      state.votedSet = new Set(Object.keys(perVoter).filter((id) => perVoter[id].size >= total));
+      $("teacher-vote-count").textContent = state.votedSet.size;
       renderParticipantList();
     });
   } else {
@@ -369,10 +371,11 @@ function renderParticipantList() {
   state.participants.forEach((p) => {
     const li = document.createElement("li");
     let done = false;
-    if (status === "writing") done = state.submittedSet.has(p.id);
-    if (status === "voting") done = state.votedSet.has(p.id);
+    let label = "";
+    if (status === "writing") { done = state.submittedSet.has(p.id); label = done ? "제출 완료" : "작성 중"; }
+    else if (status === "voting") { done = state.votedSet.has(p.id); label = done ? "투표 완료" : "투표 중"; }
     li.className = done ? "done" : "";
-    li.textContent = (done ? "✅ " : "👤 ") + p.name;
+    li.innerHTML = `<span class="p-name">${escapeHtml(p.name)}</span>` + (label ? `<span class="p-status">${escapeHtml(label)}</span>` : "");
     ul.appendChild(li);
   });
 }
@@ -398,10 +401,6 @@ function startVoteTimer(room) {
     const remain = computeRemaining(room.voteStartAt, room.voteSeconds);
     $("teacher-vote-timer").textContent = remain;
     document.querySelector("#stage-voting .timer-ring").classList.toggle("urgent", remain <= 10);
-    if (remain <= 0 && !state.autoEndFired) {
-      state.autoEndFired = true;
-      endVoting();
-    }
   };
   tick();
   state.voteTimerInterval = setInterval(tick, 1000);
@@ -421,48 +420,25 @@ async function startRound() {
 
 async function endWriting() {
   clearInterval(state.writeTimerInterval);
-  await updateDoc(doc(db, "rooms", state.roomCode), {
-    status: "voting",
-    voteStartAt: serverTimestamp(),
-  });
-}
-
-async function endVoting() {
-  clearInterval(state.voteTimerInterval);
-  await updateDoc(doc(db, "rooms", state.roomCode), { status: "roundResult" });
+  const room = state.roomData;
+  const isLast = room.currentRoundIndex >= room.words.length - 1;
+  if (isLast) {
+    await updateDoc(doc(db, "rooms", state.roomCode), {
+      status: "voting",
+      voteStartAt: serverTimestamp(),
+    });
+  } else {
+    await updateDoc(doc(db, "rooms", state.roomCode), {
+      currentRoundIndex: room.currentRoundIndex + 1,
+      status: "writing",
+      roundStartAt: serverTimestamp(),
+    });
+  }
 }
 
 async function showFinalStage() {
+  clearInterval(state.voteTimerInterval);
   await updateDoc(doc(db, "rooms", state.roomCode), { status: "finalResult" });
-}
-
-async function renderTeacherRoundResult(room) {
-  const list = $("round-result-list");
-  try {
-    const subsRef = collection(db, "rooms", state.roomCode, "submissions");
-    const q = query(subsRef, where("roundIndex", "==", room.currentRoundIndex), orderBy("voteCount", "desc"), limit(5));
-    const snap = await getDocs(q);
-    list.innerHTML = "";
-    if (snap.empty) {
-      list.innerHTML = '<p class="stage-desc">제출된 작품이 없어요</p>';
-      return;
-    }
-    snap.docs.forEach((d, i) => {
-      const data = d.data();
-      const div = document.createElement("div");
-      div.className = "result-item" + (i === 0 ? " top1" : "");
-      div.innerHTML = `
-        <div>
-          <div><span class="result-rank">${i + 1}위</span><span class="result-name">${escapeHtml(data.name)}</span></div>
-          <div class="result-text">${escapeHtml(data.text)}</div>
-        </div>
-        <div class="result-votes">${data.voteCount || 0}표</div>`;
-      list.appendChild(div);
-    });
-  } catch (e) {
-    console.error(e);
-    list.innerHTML = '<p class="stage-desc">결과를 불러오지 못했어요 (콘솔의 색인 생성 링크를 확인하세요)</p>';
-  }
 }
 
 async function renderFinal(podiumEl, confettiEl) {
@@ -597,32 +573,23 @@ async function renderStudentStage() {
   }
 
   if (room.status === "voting") {
-    const voteRef = doc(db, "rooms", state.roomCode, "votes", room.currentRoundIndex + "_" + state.participantId);
-    const voteSnap = await getDoc(voteRef);
-    if (voteSnap.exists()) {
-      showStage(scope, "s-stage-voted");
-      stopStudentExtraTimer();
-      if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
-    } else {
-      showStage(scope, "s-stage-voting");
-      startStudentVoteTimer(room);
-      if (key !== state.lastStudentKey) attachVoteListListener(room);
+    stopFunExamples();
+    showStage(scope, "s-stage-voting");
+    startStudentVoteTimer(room);
+    if (key !== state.lastStudentKey) {
+      state.selectedVoteTab = 0;
+      buildVoteTabs(room);
+      attachMyVotesListener(room);
+      selectVoteTab(room, 0);
     }
-    state.lastStudentKey = key;
-    return;
-  }
-
-  if (room.status === "roundResult") {
-    stopStudentExtraTimer();
-    if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
-    showStage(scope, "s-stage-round-result");
-    await renderStudentRoundResult(room);
     state.lastStudentKey = key;
     return;
   }
 
   if (room.status === "finalResult") {
     stopStudentExtraTimer();
+    if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
+    if (state.unsubMyVotes) { state.unsubMyVotes(); state.unsubMyVotes = null; }
     showStage(scope, "s-stage-final");
     await renderFinal($("s-podium"), $("s-confetti-wrap"));
     state.lastStudentKey = key;
@@ -671,20 +638,59 @@ async function submitNhangsi() {
   }
 }
 
-function attachVoteListListener(room) {
+function buildVoteTabs(room) {
+  const wrap = $("s-vote-tabs");
+  wrap.innerHTML = "";
+  room.words.forEach((word, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "vote-tab";
+    btn.textContent = word;
+    btn.addEventListener("click", () => selectVoteTab(room, i));
+    wrap.appendChild(btn);
+  });
+}
+
+function selectVoteTab(room, index) {
+  state.selectedVoteTab = index;
+  document.querySelectorAll("#s-vote-tabs .vote-tab").forEach((btn, i) => {
+    btn.classList.toggle("active", i === index);
+  });
+  attachVoteListListener(room, index);
+}
+
+function attachMyVotesListener(room) {
+  if (state.unsubMyVotes) { state.unsubMyVotes(); state.unsubMyVotes = null; }
+  const votesRef = collection(db, "rooms", state.roomCode, "votes");
+  const q = query(votesRef, where("voterId", "==", state.participantId));
+  state.unsubMyVotes = onSnapshot(q, (snap) => {
+    state.myVotedRounds = new Set(snap.docs.map((d) => d.data().roundIndex));
+    document.querySelectorAll("#s-vote-tabs .vote-tab").forEach((btn, i) => {
+      btn.classList.toggle("tab-done", state.myVotedRounds.has(i));
+    });
+    const allDone = room.words.length > 0 && state.myVotedRounds.size >= room.words.length;
+    $("s-vote-all-done").classList.toggle("hidden", !allDone);
+    document.querySelectorAll("#s-vote-list .vote-card").forEach((card) => {
+      if (state.myVotedRounds.has(state.selectedVoteTab)) card.classList.add("disabled");
+    });
+  });
+}
+
+function attachVoteListListener(room, wordIndex) {
   if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
   const subsRef = collection(db, "rooms", state.roomCode, "submissions");
-  const q = query(subsRef, where("roundIndex", "==", room.currentRoundIndex));
+  const q = query(subsRef, where("roundIndex", "==", wordIndex));
   state.unsubVoteList = onSnapshot(q, (snap) => {
     const list = $("s-vote-list");
     list.innerHTML = "";
     const others = snap.docs.filter((d) => d.data().participantId !== state.participantId);
+    const alreadyVoted = state.myVotedRounds && state.myVotedRounds.has(wordIndex);
     others.forEach((d) => {
       const data = d.data();
       const card = document.createElement("div");
-      card.className = "vote-card";
+      card.className = "vote-card" + (alreadyVoted ? " disabled" : "");
       card.textContent = data.text;
-      card.addEventListener("click", () => castVote(room.currentRoundIndex, d.id, data.participantId, card));
+      card.addEventListener("click", () => castVote(wordIndex, d.id, data.participantId, card));
       list.appendChild(card);
     });
     if (!others.length) {
@@ -721,32 +727,6 @@ async function castVote(roundIndex, submissionId, targetParticipantId, cardEl) {
   }
 }
 
-async function renderStudentRoundResult(room) {
-  const list = $("s-round-result-list");
-  try {
-    const subsRef = collection(db, "rooms", state.roomCode, "submissions");
-    const q = query(subsRef, where("roundIndex", "==", room.currentRoundIndex), orderBy("voteCount", "desc"), limit(5));
-    const snap = await getDocs(q);
-    list.innerHTML = "";
-    snap.docs.forEach((d, i) => {
-      const data = d.data();
-      const mine = data.participantId === state.participantId;
-      const div = document.createElement("div");
-      div.className = "result-item" + (i === 0 ? " top1" : "");
-      div.innerHTML = `
-        <div>
-          <div><span class="result-rank">${i + 1}위</span><span class="result-name">${escapeHtml(data.name)}${mine ? " (나)" : ""}</span></div>
-          <div class="result-text">${escapeHtml(data.text)}</div>
-        </div>
-        <div class="result-votes">${data.voteCount || 0}표</div>`;
-      list.appendChild(div);
-    });
-  } catch (e) {
-    console.error(e);
-    list.innerHTML = '<p class="stage-desc">결과를 불러오지 못했어요</p>';
-  }
-}
-
 function startStudentWriteTimer(room) {
   clearInterval(state.writeTimerInterval);
   const tick = () => {
@@ -775,9 +755,11 @@ function stopStudentExtraTimer() {
 }
 
 function stopStudentListeners() {
-  [state.unsubRoom, state.unsubVoteList].forEach((fn) => fn && fn());
+  [state.unsubRoom, state.unsubVoteList, state.unsubMyVotes].forEach((fn) => fn && fn());
   state.unsubRoom = null;
   state.unsubVoteList = null;
+  state.unsubMyVotes = null;
+  state.myVotedRounds = new Set();
   stopStudentExtraTimer();
   stopFunExamples();
   state.lastStudentKey = null;
@@ -807,8 +789,6 @@ $("btn-back-to-count").addEventListener("click", () => {
 $("btn-create-room").addEventListener("click", createRoom);
 $("btn-start-round").addEventListener("click", startRound);
 $("btn-end-writing").addEventListener("click", endWriting);
-$("btn-end-voting").addEventListener("click", endVoting);
-$("btn-next-round").addEventListener("click", startRound);
 $("btn-show-final").addEventListener("click", showFinalStage);
 $("btn-teacher-end-game").addEventListener("click", endGame);
 $("btn-teacher-restart").addEventListener("click", teacherRestart);

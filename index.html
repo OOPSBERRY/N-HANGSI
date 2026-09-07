@@ -110,23 +110,15 @@
         <button class="btn btn-primary btn-xl" id="btn-end-writing">✋ 작성 마감하고 투표 시작</button>
       </div>
 
-      <!-- VOTING -->
+      <!-- VOTING (모든 제시어를 한 번에, 탭은 학생 화면에서 전환) -->
       <div class="stage" id="stage-voting">
-        <div class="round-badge">ROUND <span id="teacher-round-num-2">1</span> / <span id="teacher-round-total-2">1</span></div>
-        <h2>🗳️ 투표가 진행 중이에요</h2>
+        <h2>🗳️ 전체 제시어 투표가 진행 중이에요</h2>
+        <p class="stage-desc">제시어 <span id="teacher-vote-word-total">0</span>개 모두에 대해 학생들이 익명으로 투표해요</p>
         <div class="timer-ring">
           <span id="teacher-vote-timer">--</span>
         </div>
-        <p class="stage-desc"><span id="teacher-vote-count">0</span> / <span id="teacher-vote-total">0</span>명 투표 완료</p>
-        <button class="btn btn-primary btn-xl" id="btn-end-voting">📣 투표 마감하고 결과 보기</button>
-      </div>
-
-      <!-- ROUND RESULT -->
-      <div class="stage" id="stage-round-result">
-        <h2>🏅 이번 라운드 결과</h2>
-        <div id="round-result-list" class="result-list"></div>
-        <button class="btn btn-primary btn-xl" id="btn-next-round">다음 라운드 ▶</button>
-        <button class="btn btn-secondary btn-xl hidden" id="btn-show-final">🏆 최종 시상식 보기</button>
+        <p class="stage-desc"><span id="teacher-vote-count">0</span> / <span id="teacher-vote-total">0</span>명 전체 투표 완료</p>
+        <button class="btn btn-primary btn-xl" id="btn-show-final">🏆 시상식 시작</button>
       </div>
 
       <!-- FINAL -->
@@ -188,25 +180,13 @@
       <div class="my-submission" id="s-my-submission"></div>
     </div>
 
-    <!-- VOTING -->
+    <!-- VOTING (제시어별 탭) -->
     <div class="stage" id="s-stage-voting">
       <h2>🗳️ 가장 마음에 드는 작품에 투표하세요</h2>
       <div class="timer-ring small"><span id="s-vote-timer">--</span></div>
+      <div id="s-vote-tabs" class="vote-tabs"></div>
+      <p class="stage-desc hidden" id="s-vote-all-done">🎉 모든 제시어에 투표를 완료했어요! 결과를 기다려주세요</p>
       <div id="s-vote-list" class="vote-list"></div>
-    </div>
-
-    <!-- WAIT AFTER VOTE -->
-    <div class="stage" id="s-stage-voted">
-      <div class="stage-icon">🙌</div>
-      <h2>투표 완료!</h2>
-      <p class="stage-desc">결과 발표를 기다려주세요</p>
-    </div>
-
-    <!-- ROUND RESULT -->
-    <div class="stage" id="s-stage-round-result">
-      <h2>🏅 이번 라운드 결과</h2>
-      <div id="s-round-result-list" class="result-list"></div>
-      <p class="stage-desc">다음 라운드를 기다려주세요</p>
     </div>
 
     <!-- FINAL -->
