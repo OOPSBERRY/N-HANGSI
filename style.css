@@ -166,6 +166,14 @@ button, input, textarea {
   box-shadow: 0 10px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(255, 255, 255, .06);
 }
 
+.made-by {
+  margin-top: 2rem;
+  font-size: .78rem;
+  color: #a9a6b0;
+  opacity: 0;
+  animation: fadeUp .6s ease 1.4s forwards;
+}
+
 @keyframes logoSlam {
   0% { transform: scale(3.4) rotate(-16deg); opacity: 0; filter: blur(16px); }
   42% { transform: scale(.88) rotate(4deg); opacity: 1; filter: blur(0); }
