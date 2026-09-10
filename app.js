@@ -150,7 +150,8 @@ const state = {
   unsubRoom: null,
   unsubParticipants: null,
   unsubRoundExtra: null,
-  unsubVoteList: null,
+  voteListUnsubs: {},
+  voteSubsByWord: {},
   writeTimerInterval: null,
   voteTimerInterval: null,
   lastTeacherKey: null,
@@ -685,7 +686,7 @@ async function renderStudentStage() {
 
   if (room.status === "finalResult") {
     stopStudentExtraTimer();
-    if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
+    stopAllVoteListListeners();
     if (state.unsubMyVotes) { state.unsubMyVotes(); state.unsubMyVotes = null; }
     showStage(scope, "s-stage-final");
     await renderWordAwards($("s-word-awards"), room);
@@ -762,7 +763,13 @@ function selectVoteTab(room, index) {
   document.querySelectorAll("#s-vote-tabs .vote-tab").forEach((btn, i) => {
     btn.classList.toggle("active", i === index);
   });
-  attachVoteListListener(room, index);
+  // 한 번 불러온 탭은 리스너를 계속 열어두고 캐시에서 다시 그리기만 함
+  // (탭을 왔다갔다 할 때마다 매번 새로 읽어오면 Firestore 읽기 사용량이 크게 낭비됨)
+  if (state.voteListUnsubs[index]) {
+    renderVoteListFromCache(index);
+  } else {
+    attachVoteListListener(room, index);
+  }
 }
 
 function attachMyVotesListener(room) {
@@ -782,27 +789,39 @@ function attachMyVotesListener(room) {
   });
 }
 
+function renderVoteListFromCache(wordIndex) {
+  const list = $("s-vote-list");
+  const docsData = state.voteSubsByWord[wordIndex] || [];
+  list.innerHTML = "";
+  const others = docsData.filter((data) => data.participantId !== state.participantId);
+  const alreadyVoted = state.myVotedRounds && state.myVotedRounds.has(wordIndex);
+  others.forEach((data) => {
+    const card = document.createElement("div");
+    card.className = "vote-card" + (alreadyVoted ? " disabled" : "");
+    card.textContent = data.text;
+    card.addEventListener("click", () => castVote(wordIndex, data.__subId, data.participantId, card));
+    list.appendChild(card);
+  });
+  if (!others.length) {
+    list.innerHTML = '<p class="stage-desc">아직 제출된 다른 작품이 없어요</p>';
+  }
+}
+
 function attachVoteListListener(room, wordIndex) {
-  if (state.unsubVoteList) { state.unsubVoteList(); state.unsubVoteList = null; }
   const subsRef = collection(db, "rooms", state.roomCode, "submissions");
   const q = query(subsRef, where("roundIndex", "==", wordIndex));
-  state.unsubVoteList = onSnapshot(q, (snap) => {
-    const list = $("s-vote-list");
-    list.innerHTML = "";
-    const others = snap.docs.filter((d) => d.data().participantId !== state.participantId);
-    const alreadyVoted = state.myVotedRounds && state.myVotedRounds.has(wordIndex);
-    others.forEach((d) => {
-      const data = d.data();
-      const card = document.createElement("div");
-      card.className = "vote-card" + (alreadyVoted ? " disabled" : "");
-      card.textContent = data.text;
-      card.addEventListener("click", () => castVote(wordIndex, d.id, data.participantId, card));
-      list.appendChild(card);
-    });
-    if (!others.length) {
-      list.innerHTML = '<p class="stage-desc">아직 제출된 다른 작품이 없어요</p>';
+  state.voteListUnsubs[wordIndex] = onSnapshot(q, (snap) => {
+    state.voteSubsByWord[wordIndex] = snap.docs.map((d) => ({ __subId: d.id, ...d.data() }));
+    if (state.selectedVoteTab === wordIndex) {
+      renderVoteListFromCache(wordIndex);
     }
   });
+}
+
+function stopAllVoteListListeners() {
+  Object.values(state.voteListUnsubs).forEach((fn) => fn && fn());
+  state.voteListUnsubs = {};
+  state.voteSubsByWord = {};
 }
 
 async function castVote(roundIndex, submissionId, targetParticipantId, cardEl) {
@@ -861,9 +880,9 @@ function stopStudentExtraTimer() {
 }
 
 function stopStudentListeners() {
-  [state.unsubRoom, state.unsubVoteList, state.unsubMyVotes, state.unsubMyParticipant].forEach((fn) => fn && fn());
+  [state.unsubRoom, state.unsubMyVotes, state.unsubMyParticipant].forEach((fn) => fn && fn());
+  stopAllVoteListListeners();
   state.unsubRoom = null;
-  state.unsubVoteList = null;
   state.unsubMyVotes = null;
   state.unsubMyParticipant = null;
   state.myVotedRounds = new Set();
