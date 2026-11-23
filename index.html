@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>N행시 대회</title>
 <link rel="icon" type="image/png" href="favicon.png" />
-<link rel="stylesheet" href="style.css?v=5" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -22,12 +23,10 @@
     <p class="subtitle">제시어로 짓는 나만의 N행시, 지금 시작해요!</p>
     <div class="home-buttons">
       <button class="btn btn-primary btn-xl" id="btn-go-teacher">
-        <span class="btn-emoji">🧑‍🏫</span>
-        <span>선생님 — 방 만들기</span>
+        <span>선생님 · 방 만들기</span>
       </button>
       <button class="btn btn-secondary btn-xl" id="btn-go-student">
-        <span class="btn-emoji">🙋</span>
-        <span>학생 — 참가하기</span>
+        <span>학생 · 참가하기</span>
       </button>
     </div>
   </div>
@@ -87,7 +86,7 @@
         <h3>참가자 <span id="teacher-participant-count">0</span>명</h3>
         <ul id="teacher-participant-list" class="participant-list"></ul>
       </div>
-      <button class="btn btn-ghost" id="btn-teacher-end-game">🛑 게임 종료</button>
+      <button class="btn btn-ghost" id="btn-teacher-end-game">게임 종료</button>
     </aside>
 
     <main class="main-panel">
@@ -97,54 +96,54 @@
         <div class="stage-icon">🚪</div>
         <h2>학생들이 입장하는 중이에요</h2>
         <p class="stage-desc">모든 학생이 들어오면 라운드를 시작하세요.</p>
-        <button class="btn btn-primary btn-xl" id="btn-start-round">🎬 첫 라운드 시작</button>
+        <button class="btn btn-primary btn-xl" id="btn-start-round">첫 라운드 시작</button>
       </div>
 
       <!-- WRITING -->
       <div class="stage" id="stage-writing">
         <div class="round-badge">ROUND <span id="teacher-round-num">1</span> / <span id="teacher-round-total">1</span></div>
-        <h2 class="prompt-word">제시어: <span id="teacher-current-word">-</span></h2>
+        <h2 class="prompt-word">제시어 <span id="teacher-current-word">-</span></h2>
         <div class="timer-ring">
           <span id="teacher-write-timer">--</span>
         </div>
-        <button type="button" class="timer-add-btn" id="btn-add-write-time">⏱️ 30초 추가</button>
+        <button type="button" class="timer-add-btn" id="btn-add-write-time">+30초</button>
         <p class="stage-desc"><span id="teacher-submit-count">0</span> / <span id="teacher-total-count">0</span>명 제출 완료</p>
-        <button class="btn btn-primary btn-xl" id="btn-end-writing">✋ 작성 마감하고 투표 시작</button>
+        <button class="btn btn-primary btn-xl" id="btn-end-writing">작성 마감하고 투표 시작</button>
       </div>
 
       <!-- VOTING (모든 제시어를 한 번에, 탭은 학생 화면에서 전환) -->
       <div class="stage" id="stage-voting">
-        <h2>🗳️ 전체 제시어 투표가 진행 중이에요</h2>
+        <h2>전체 제시어 투표가 진행 중이에요</h2>
         <p class="stage-desc">제시어 <span id="teacher-vote-word-total">0</span>개 모두에 대해 학생들이 익명으로 투표해요</p>
         <div class="timer-ring">
           <span id="teacher-vote-timer">--</span>
         </div>
-        <button type="button" class="timer-add-btn" id="btn-add-vote-time">⏱️ 30초 추가</button>
+        <button type="button" class="timer-add-btn" id="btn-add-vote-time">+30초</button>
         <p class="stage-desc"><span id="teacher-vote-count">0</span> / <span id="teacher-vote-total">0</span>명 전체 투표 완료</p>
-        <button class="btn btn-primary btn-xl" id="btn-show-final">🏆 시상식 시작</button>
+        <button class="btn btn-primary btn-xl" id="btn-show-final">시상식 시작</button>
       </div>
 
       <!-- FINAL -->
       <div class="stage" id="stage-final">
         <div class="confetti" id="confetti-wrap"></div>
-        <h2 class="ceremony-title">🎉 시상식 🎉</h2>
+        <h2 class="ceremony-title">시상식</h2>
         <div id="word-awards" class="word-awards"></div>
         <div id="podium" class="podium"></div>
         <div id="winner-works" class="winner-works"></div>
-        <button class="btn btn-secondary btn-xl" id="btn-open-exhibition">🖼️ 전체 작품 전시회 열기</button>
+        <button class="btn btn-secondary btn-xl" id="btn-open-exhibition">전체 작품 전시회 열기</button>
       </div>
 
       <!-- EXHIBITION -->
       <div class="stage" id="stage-exhibition">
-        <h2 class="ceremony-title">🖼️ 전체 작품 전시회</h2>
+        <h2 class="ceremony-title">전체 작품 전시회</h2>
         <div id="exhibition-gallery" class="exhibition-gallery"></div>
-        <button class="btn btn-secondary btn-xl" id="btn-teacher-restart">🔄 새 게임 만들기</button>
+        <button class="btn btn-secondary btn-xl" id="btn-teacher-restart">새 게임 만들기</button>
       </div>
 
     </main>
   </div>
 
-  <button class="qr-fab" id="btn-show-qr-modal">📱 QR코드 보기</button>
+  <button class="qr-fab" id="btn-show-qr-modal">QR코드 보기</button>
   <div class="qr-modal hidden" id="qr-modal">
     <div class="qr-modal-backdrop" id="qr-modal-backdrop"></div>
     <div class="qr-modal-card">
@@ -191,7 +190,7 @@
     <!-- WRITING -->
     <div class="stage" id="s-stage-writing">
       <div class="round-badge">ROUND <span id="s-round-num">1</span></div>
-      <h2 class="prompt-word">제시어: <span id="s-current-word">-</span></h2>
+      <h2 class="prompt-word">제시어 <span id="s-current-word">-</span></h2>
       <div class="timer-ring small"><span id="s-write-timer">--</span></div>
       <div id="s-write-lines" class="write-lines"></div>
       <button class="btn btn-primary btn-xl" id="btn-submit-nhangsi">제출하기</button>
@@ -207,17 +206,17 @@
 
     <!-- VOTING (제시어별 탭) -->
     <div class="stage" id="s-stage-voting">
-      <h2>🗳️ 가장 마음에 드는 작품에 투표하세요</h2>
+      <h2>가장 마음에 드는 작품에 투표하세요</h2>
       <div class="timer-ring small"><span id="s-vote-timer">--</span></div>
       <div id="s-vote-tabs" class="vote-tabs"></div>
-      <p class="stage-desc hidden" id="s-vote-all-done">🎉 모든 제시어에 투표를 완료했어요! 결과를 기다려주세요</p>
+      <p class="stage-desc hidden" id="s-vote-all-done">모든 제시어에 투표를 완료했어요! 결과를 기다려주세요</p>
       <div id="s-vote-list" class="vote-list"></div>
     </div>
 
     <!-- FINAL -->
     <div class="stage" id="s-stage-final">
       <div class="confetti" id="s-confetti-wrap"></div>
-      <h2 class="ceremony-title">🎉 시상식 🎉</h2>
+      <h2 class="ceremony-title">시상식</h2>
       <div id="s-word-awards" class="word-awards"></div>
       <div id="s-podium" class="podium"></div>
       <div id="s-winner-works" class="winner-works"></div>
@@ -226,7 +225,7 @@
 
     <!-- EXHIBITION -->
     <div class="stage" id="s-stage-exhibition">
-      <h2 class="ceremony-title">🖼️ 전체 작품 전시회</h2>
+      <h2 class="ceremony-title">전체 작품 전시회</h2>
       <div id="s-exhibition-gallery" class="exhibition-gallery"></div>
     </div>
 

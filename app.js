@@ -90,7 +90,7 @@ function computeRemaining(startAtTimestamp, durationSeconds) {
 
 function spawnConfetti(container) {
   container.innerHTML = "";
-  const colors = ["#ff6b6b", "#4d96ff", "#ffd166", "#06d6a0", "#c77dff"];
+  const colors = ["#111111", "#39393b", "#9e9ea0", "#cacacb", "#d30005"];
   for (let i = 0; i < 60; i++) {
     const p = document.createElement("div");
     p.className = "confetti-piece";
@@ -115,7 +115,7 @@ function renderFunExample(index) {
   const i = index % FUN_EXAMPLE_IMAGES.length;
   const dotsHtml = FUN_EXAMPLE_IMAGES.map((_, di) => `<span class="${di === i ? "active" : ""}"></span>`).join("");
   box.innerHTML = `
-    <div class="fun-examples-label">✨ 기발한 학생 N행시 모음</div>
+    <div class="fun-examples-label">기발한 학생 N행시 모음</div>
     <img src="${FUN_EXAMPLE_IMAGES[i]}" alt="학생 N행시 예시" class="fun-example-img" />
     <div class="fun-example-dots">${dotsHtml}</div>`;
 }
